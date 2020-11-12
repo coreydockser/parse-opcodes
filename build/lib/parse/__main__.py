@@ -11,7 +11,7 @@ def main():
     arglut = {}
 
 
-    with open("opcode-formats.txt", "r") as f:
+    with open("parse/opcode-formats", "r") as f:
             opcode_formats = [line.rstrip() for line in f]
 
     #splits it into argluts and opcodes
