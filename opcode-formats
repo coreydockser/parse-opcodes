@@ -1,0 +1,1098 @@
+#code ignores anything beginning with '#', '@' or ''
+
+##ARGLUTS-START
+arglut = {}
+arglut['rd'] = (11,7)
+arglut['rs1'] = (19,15)
+arglut['rs2'] = (24,20)
+arglut['rs3'] = (31,27)
+arglut['aqrl'] = (26,25)
+arglut['fm'] = (31,28)
+arglut['pred'] = (27,24)
+arglut['succ'] = (23,20)
+arglut['rm'] = (14,12)
+arglut['funct3'] = (14,12)
+arglut['imm20'] = (31,12)
+arglut['jimm20'] = (31,12)
+arglut['imm12'] = (31,20)
+arglut['imm12hi'] = (31,25)
+arglut['bimm12hi'] = (31,25)
+arglut['imm12lo'] = (11,7)
+arglut['bimm12lo'] = (11,7)
+arglut['zimm'] = (19,15)
+arglut['shamt'] = (25,20)
+arglut['shamtw'] = (24,20)
+
+# for vectors
+arglut['vd'] = (11,7)
+arglut['vs3'] = (11,7)
+arglut['vs1'] = (19,15)
+arglut['vs2'] = (24,20)
+arglut['vm'] = (25,25)
+arglut['wd'] = (26,26)
+arglut['amoop'] = (31,27)
+arglut['nf'] = (31,29)
+arglut['simm5'] = (19,15)
+arglut['zimm11'] = (30,20)
+
+##ARGLUTS-END
+
+
+##OPCODES-START
+# Instructions that differ slightly between rv32 and rv64
+@slli.rv32 rd rs1 31..25=0  shamtw  14..12=1 6..2=0x04 1..0=3
+@srli.rv32 rd rs1 31..25=0  shamtw  14..12=5 6..2=0x04 1..0=3
+@srai.rv32 rd rs1 31..25=32 shamtw  14..12=5 6..2=0x04 1..0=3
+
+# SYSTEM pseudo-instructions that map to csr*
+@frflags    rd 19..15=0 31..20=0x001 14..12=2 6..2=0x1C 1..0=3
+@fsflags    rd rs1      31..20=0x001 14..12=1 6..2=0x1C 1..0=3
+@fsflagsi   rd zimm     31..20=0x001 14..12=5 6..2=0x1C 1..0=3
+@frrm       rd 19..15=0 31..20=0x002 14..12=2 6..2=0x1C 1..0=3
+@fsrm       rd rs1      31..20=0x002 14..12=1 6..2=0x1C 1..0=3
+@fsrmi      rd zimm     31..20=0x002 14..12=5 6..2=0x1C 1..0=3
+@fscsr      rd rs1      31..20=0x003 14..12=1 6..2=0x1C 1..0=3
+@frcsr      rd 19..15=0 31..20=0x003 14..12=2 6..2=0x1C 1..0=3
+@rdcycle    rd 19..15=0 31..20=0xC00 14..12=2 6..2=0x1C 1..0=3
+@rdtime     rd 19..15=0 31..20=0xC01 14..12=2 6..2=0x1C 1..0=3
+@rdinstret  rd 19..15=0 31..20=0xC02 14..12=2 6..2=0x1C 1..0=3
+@rdcycleh   rd 19..15=0 31..20=0xC80 14..12=2 6..2=0x1C 1..0=3
+@rdtimeh    rd 19..15=0 31..20=0xC81 14..12=2 6..2=0x1C 1..0=3
+@rdinstreth rd 19..15=0 31..20=0xC82 14..12=2 6..2=0x1C 1..0=3
+
+# Old names for ecall/ebreak
+@scall     11..7=0 19..15=0 31..20=0x000 14..12=0 6..2=0x1C 1..0=3
+@sbreak    11..7=0 19..15=0 31..20=0x001 14..12=0 6..2=0x1C 1..0=3
+
+# Old names for fmv.x.w/fmv.w.x
+@fmv.x.s   rd rs1 24..20=0 31..27=0x1C 14..12=0 26..25=0 6..2=0x14 1..0=3
+@fmv.s.x   rd rs1 24..20=0 31..27=0x1E 14..12=0 26..25=0 6..2=0x14 1..0=3
+
+# specialized fences
+@fence.tso 31..28=8 27..24=3 23..20=3 19..15=ignore 14..12=0 11..7=ignore 6..2=0x03 1..0=3
+@pause     31..28=0 27..24=1 23..20=0 19..15=0      14..12=0 11..7=0      6..2=0x03 1..0=3
+# format of a line in this file:
+# <instruction name> <args> <opcode>
+#
+# <opcode> is given by specifying one or more range/value pairs:
+# hi..lo=value or bit=value or arg=value (e.g. 6..2=0x45 10=1 rd=0)
+#
+# <args> is one of rd, rs1, rs2, rs3, imm20, imm12, imm12lo, imm12hi,
+# shamtw, shamt, rm
+
+beq     bimm12hi rs1 rs2 bimm12lo 14..12=0 6..2=0x18 1..0=3
+bne     bimm12hi rs1 rs2 bimm12lo 14..12=1 6..2=0x18 1..0=3
+blt     bimm12hi rs1 rs2 bimm12lo 14..12=4 6..2=0x18 1..0=3
+bge     bimm12hi rs1 rs2 bimm12lo 14..12=5 6..2=0x18 1..0=3
+bltu    bimm12hi rs1 rs2 bimm12lo 14..12=6 6..2=0x18 1..0=3
+bgeu    bimm12hi rs1 rs2 bimm12lo 14..12=7 6..2=0x18 1..0=3
+
+jalr    rd rs1 imm12              14..12=0 6..2=0x19 1..0=3
+
+jal     rd jimm20                          6..2=0x1b 1..0=3
+
+lui     rd imm20 6..2=0x0D 1..0=3
+auipc   rd imm20 6..2=0x05 1..0=3
+
+addi    rd rs1 imm12           14..12=0 6..2=0x04 1..0=3
+slli    rd rs1 31..26=0  shamt 14..12=1 6..2=0x04 1..0=3
+slti    rd rs1 imm12           14..12=2 6..2=0x04 1..0=3
+sltiu   rd rs1 imm12           14..12=3 6..2=0x04 1..0=3
+xori    rd rs1 imm12           14..12=4 6..2=0x04 1..0=3
+srli    rd rs1 31..26=0  shamt 14..12=5 6..2=0x04 1..0=3
+srai    rd rs1 31..26=16 shamt 14..12=5 6..2=0x04 1..0=3
+ori     rd rs1 imm12           14..12=6 6..2=0x04 1..0=3
+andi    rd rs1 imm12           14..12=7 6..2=0x04 1..0=3
+
+add     rd rs1 rs2 31..25=0  14..12=0 6..2=0x0C 1..0=3
+sub     rd rs1 rs2 31..25=32 14..12=0 6..2=0x0C 1..0=3
+# change so that it only parses things with 0x as hex
+sll     rd rs1 rs2 31..25=0  14..12=1 6..2=0x0C 1..0=3
+slt     rd rs1 rs2 31..25=0  14..12=2 6..2=0x0C 1..0=3
+sltu    rd rs1 rs2 31..25=0  14..12=3 6..2=0x0C 1..0=3
+xor     rd rs1 rs2 31..25=0  14..12=4 6..2=0x0C 1..0=3
+srl     rd rs1 rs2 31..25=0  14..12=5 6..2=0x0C 1..0=3
+sra     rd rs1 rs2 31..25=32 14..12=5 6..2=0x0C 1..0=3
+or      rd rs1 rs2 31..25=0  14..12=6 6..2=0x0C 1..0=3
+and     rd rs1 rs2 31..25=0  14..12=7 6..2=0x0C 1..0=3
+
+lb      rd rs1       imm12 14..12=0 6..2=0x00 1..0=3
+lh      rd rs1       imm12 14..12=1 6..2=0x00 1..0=3
+lw      rd rs1       imm12 14..12=2 6..2=0x00 1..0=3
+lbu     rd rs1       imm12 14..12=4 6..2=0x00 1..0=3
+lhu     rd rs1       imm12 14..12=5 6..2=0x00 1..0=3
+
+sb     imm12hi rs1 rs2 imm12lo 14..12=0 6..2=0x08 1..0=3
+sh     imm12hi rs1 rs2 imm12lo 14..12=1 6..2=0x08 1..0=3
+sw     imm12hi rs1 rs2 imm12lo 14..12=2 6..2=0x08 1..0=3
+
+fence       fm            pred succ     rs1 14..12=0 rd 6..2=0x03 1..0=3
+fence.i     imm12                       rs1 14..12=1 rd 6..2=0x03 1..0=3
+
+# RV64I additions to RV32I
+
+addiw   rd rs1 imm12            14..12=0 6..2=0x06 1..0=3
+slliw   rd rs1 31..25=0  shamtw 14..12=1 6..2=0x06 1..0=3
+srliw   rd rs1 31..25=0  shamtw 14..12=5 6..2=0x06 1..0=3
+sraiw   rd rs1 31..25=32 shamtw 14..12=5 6..2=0x06 1..0=3
+
+addw    rd rs1 rs2 31..25=0  14..12=0 6..2=0x0E 1..0=3
+subw    rd rs1 rs2 31..25=32 14..12=0 6..2=0x0E 1..0=3
+sllw    rd rs1 rs2 31..25=0  14..12=1 6..2=0x0E 1..0=3
+srlw    rd rs1 rs2 31..25=0  14..12=5 6..2=0x0E 1..0=3
+sraw    rd rs1 rs2 31..25=32 14..12=5 6..2=0x0E 1..0=3
+
+ld      rd rs1       imm12 14..12=3 6..2=0x00 1..0=3
+lwu     rd rs1       imm12 14..12=6 6..2=0x00 1..0=3
+
+sd     imm12hi rs1 rs2 imm12lo 14..12=3 6..2=0x08 1..0=3
+mul     rd rs1 rs2 31..25=1 14..12=0 6..2=0x0C 1..0=3
+mulh    rd rs1 rs2 31..25=1 14..12=1 6..2=0x0C 1..0=3
+mulhsu  rd rs1 rs2 31..25=1 14..12=2 6..2=0x0C 1..0=3
+mulhu   rd rs1 rs2 31..25=1 14..12=3 6..2=0x0C 1..0=3
+div     rd rs1 rs2 31..25=1 14..12=4 6..2=0x0C 1..0=3
+divu    rd rs1 rs2 31..25=1 14..12=5 6..2=0x0C 1..0=3
+rem     rd rs1 rs2 31..25=1 14..12=6 6..2=0x0C 1..0=3
+remu    rd rs1 rs2 31..25=1 14..12=7 6..2=0x0C 1..0=3
+# RV64M additions to RV32M
+
+mulw    rd rs1 rs2 31..25=1 14..12=0 6..2=0x0E 1..0=3
+divw    rd rs1 rs2 31..25=1 14..12=4 6..2=0x0E 1..0=3
+divuw   rd rs1 rs2 31..25=1 14..12=5 6..2=0x0E 1..0=3
+remw    rd rs1 rs2 31..25=1 14..12=6 6..2=0x0E 1..0=3
+remuw   rd rs1 rs2 31..25=1 14..12=7 6..2=0x0E 1..0=3
+amoadd.w    rd rs1 rs2      aqrl 31..29=0 28..27=0 14..12=2 6..2=0x0B 1..0=3
+amoxor.w    rd rs1 rs2      aqrl 31..29=1 28..27=0 14..12=2 6..2=0x0B 1..0=3
+amoor.w     rd rs1 rs2      aqrl 31..29=2 28..27=0 14..12=2 6..2=0x0B 1..0=3
+amoand.w    rd rs1 rs2      aqrl 31..29=3 28..27=0 14..12=2 6..2=0x0B 1..0=3
+amomin.w    rd rs1 rs2      aqrl 31..29=4 28..27=0 14..12=2 6..2=0x0B 1..0=3
+amomax.w    rd rs1 rs2      aqrl 31..29=5 28..27=0 14..12=2 6..2=0x0B 1..0=3
+amominu.w   rd rs1 rs2      aqrl 31..29=6 28..27=0 14..12=2 6..2=0x0B 1..0=3
+amomaxu.w   rd rs1 rs2      aqrl 31..29=7 28..27=0 14..12=2 6..2=0x0B 1..0=3
+amoswap.w   rd rs1 rs2      aqrl 31..29=0 28..27=1 14..12=2 6..2=0x0B 1..0=3
+lr.w        rd rs1 24..20=0 aqrl 31..29=0 28..27=2 14..12=2 6..2=0x0B 1..0=3
+sc.w        rd rs1 rs2      aqrl 31..29=0 28..27=3 14..12=2 6..2=0x0B 1..0=3
+# RV64A additions to RV32A
+
+amoadd.d    rd rs1 rs2      aqrl 31..29=0 28..27=0 14..12=3 6..2=0x0B 1..0=3
+amoxor.d    rd rs1 rs2      aqrl 31..29=1 28..27=0 14..12=3 6..2=0x0B 1..0=3
+amoor.d     rd rs1 rs2      aqrl 31..29=2 28..27=0 14..12=3 6..2=0x0B 1..0=3
+amoand.d    rd rs1 rs2      aqrl 31..29=3 28..27=0 14..12=3 6..2=0x0B 1..0=3
+amomin.d    rd rs1 rs2      aqrl 31..29=4 28..27=0 14..12=3 6..2=0x0B 1..0=3
+amomax.d    rd rs1 rs2      aqrl 31..29=5 28..27=0 14..12=3 6..2=0x0B 1..0=3
+amominu.d   rd rs1 rs2      aqrl 31..29=6 28..27=0 14..12=3 6..2=0x0B 1..0=3
+amomaxu.d   rd rs1 rs2      aqrl 31..29=7 28..27=0 14..12=3 6..2=0x0B 1..0=3
+amoswap.d   rd rs1 rs2      aqrl 31..29=0 28..27=1 14..12=3 6..2=0x0B 1..0=3
+lr.d        rd rs1 24..20=0 aqrl 31..29=0 28..27=2 14..12=3 6..2=0x0B 1..0=3
+sc.d        rd rs1 rs2      aqrl 31..29=0 28..27=3 14..12=3 6..2=0x0B 1..0=3
+# Hypervisor extension
+hfence.vvma 11..7=0 rs1        rs2 31..25=0x11  14..12=0 6..2=0x1C 1..0=3
+hfence.gvma 11..7=0 rs1        rs2 31..25=0x31  14..12=0 6..2=0x1C 1..0=3
+
+hlv.b            rd rs1 24..20=0x0 31..25=0x30  14..12=4 6..2=0x1C 1..0=3
+hlv.bu           rd rs1 24..20=0x1 31..25=0x30  14..12=4 6..2=0x1C 1..0=3
+hlv.h            rd rs1 24..20=0x0 31..25=0x32  14..12=4 6..2=0x1C 1..0=3
+hlv.hu           rd rs1 24..20=0x1 31..25=0x32  14..12=4 6..2=0x1C 1..0=3
+hlvx.hu          rd rs1 24..20=0x3 31..25=0x32  14..12=4 6..2=0x1C 1..0=3
+hlv.w            rd rs1 24..20=0x0 31..25=0x34  14..12=4 6..2=0x1C 1..0=3
+hlvx.wu          rd rs1 24..20=0x3 31..25=0x34  14..12=4 6..2=0x1C 1..0=3
+hsv.b       11..7=0 rs1        rs2 31..25=0x31  14..12=4 6..2=0x1C 1..0=3
+hsv.h       11..7=0 rs1        rs2 31..25=0x33  14..12=4 6..2=0x1C 1..0=3
+hsv.w       11..7=0 rs1        rs2 31..25=0x35  14..12=4 6..2=0x1C 1..0=3
+# Hypervisor extension
+hlv.wu           rd rs1 24..20=0x1 31..25=0x34  14..12=4 6..2=0x1C 1..0=3
+hlv.d            rd rs1 24..20=0x0 31..25=0x36  14..12=4 6..2=0x1C 1..0=3
+hsv.d       11..7=0 rs1        rs2 31..25=0x37  14..12=4 6..2=0x1C 1..0=3
+fadd.s    rd rs1 rs2      31..27=0x00 rm       26..25=0 6..2=0x14 1..0=3
+fsub.s    rd rs1 rs2      31..27=0x01 rm       26..25=0 6..2=0x14 1..0=3
+fmul.s    rd rs1 rs2      31..27=0x02 rm       26..25=0 6..2=0x14 1..0=3
+fdiv.s    rd rs1 rs2      31..27=0x03 rm       26..25=0 6..2=0x14 1..0=3
+fsgnj.s   rd rs1 rs2      31..27=0x04 14..12=0 26..25=0 6..2=0x14 1..0=3
+fsgnjn.s  rd rs1 rs2      31..27=0x04 14..12=1 26..25=0 6..2=0x14 1..0=3
+fsgnjx.s  rd rs1 rs2      31..27=0x04 14..12=2 26..25=0 6..2=0x14 1..0=3
+fmin.s    rd rs1 rs2      31..27=0x05 14..12=0 26..25=0 6..2=0x14 1..0=3
+fmax.s    rd rs1 rs2      31..27=0x05 14..12=1 26..25=0 6..2=0x14 1..0=3
+fsqrt.s   rd rs1 24..20=0 31..27=0x0B rm       26..25=0 6..2=0x14 1..0=3
+
+fle.s     rd rs1 rs2      31..27=0x14 14..12=0 26..25=0 6..2=0x14 1..0=3
+flt.s     rd rs1 rs2      31..27=0x14 14..12=1 26..25=0 6..2=0x14 1..0=3
+feq.s     rd rs1 rs2      31..27=0x14 14..12=2 26..25=0 6..2=0x14 1..0=3
+
+fcvt.w.s  rd rs1 24..20=0 31..27=0x18 rm       26..25=0 6..2=0x14 1..0=3
+fcvt.wu.s rd rs1 24..20=1 31..27=0x18 rm       26..25=0 6..2=0x14 1..0=3
+fmv.x.w   rd rs1 24..20=0 31..27=0x1C 14..12=0 26..25=0 6..2=0x14 1..0=3
+fclass.s  rd rs1 24..20=0 31..27=0x1C 14..12=1 26..25=0 6..2=0x14 1..0=3
+
+fcvt.s.w  rd rs1 24..20=0 31..27=0x1A rm       26..25=0 6..2=0x14 1..0=3
+fcvt.s.wu rd rs1 24..20=1 31..27=0x1A rm       26..25=0 6..2=0x14 1..0=3
+fmv.w.x   rd rs1 24..20=0 31..27=0x1E 14..12=0 26..25=0 6..2=0x14 1..0=3
+
+flw       rd rs1 imm12 14..12=2 6..2=0x01 1..0=3
+
+fsw       imm12hi rs1 rs2 imm12lo 14..12=2 6..2=0x09 1..0=3
+
+fmadd.s   rd rs1 rs2 rs3 rm 26..25=0 6..2=0x10 1..0=3
+fmsub.s   rd rs1 rs2 rs3 rm 26..25=0 6..2=0x11 1..0=3
+fnmsub.s  rd rs1 rs2 rs3 rm 26..25=0 6..2=0x12 1..0=3
+fnmadd.s  rd rs1 rs2 rs3 rm 26..25=0 6..2=0x13 1..0=3
+# RV64F additions to RV32F
+
+fcvt.l.s  rd rs1 24..20=2 31..27=0x18 rm       26..25=0 6..2=0x14 1..0=3
+fcvt.lu.s rd rs1 24..20=3 31..27=0x18 rm       26..25=0 6..2=0x14 1..0=3
+
+fcvt.s.l  rd rs1 24..20=2 31..27=0x1A rm       26..25=0 6..2=0x14 1..0=3
+fcvt.s.lu rd rs1 24..20=3 31..27=0x1A rm       26..25=0 6..2=0x14 1..0=3
+fadd.d    rd rs1 rs2      31..27=0x00 rm       26..25=1 6..2=0x14 1..0=3
+fsub.d    rd rs1 rs2      31..27=0x01 rm       26..25=1 6..2=0x14 1..0=3
+fmul.d    rd rs1 rs2      31..27=0x02 rm       26..25=1 6..2=0x14 1..0=3
+fdiv.d    rd rs1 rs2      31..27=0x03 rm       26..25=1 6..2=0x14 1..0=3
+fsgnj.d   rd rs1 rs2      31..27=0x04 14..12=0 26..25=1 6..2=0x14 1..0=3
+fsgnjn.d  rd rs1 rs2      31..27=0x04 14..12=1 26..25=1 6..2=0x14 1..0=3
+fsgnjx.d  rd rs1 rs2      31..27=0x04 14..12=2 26..25=1 6..2=0x14 1..0=3
+fmin.d    rd rs1 rs2      31..27=0x05 14..12=0 26..25=1 6..2=0x14 1..0=3
+fmax.d    rd rs1 rs2      31..27=0x05 14..12=1 26..25=1 6..2=0x14 1..0=3
+fcvt.s.d  rd rs1 24..20=1 31..27=0x08 rm       26..25=0 6..2=0x14 1..0=3
+fcvt.d.s  rd rs1 24..20=0 31..27=0x08 rm       26..25=1 6..2=0x14 1..0=3
+fsqrt.d   rd rs1 24..20=0 31..27=0x0B rm       26..25=1 6..2=0x14 1..0=3
+
+fle.d     rd rs1 rs2      31..27=0x14 14..12=0 26..25=1 6..2=0x14 1..0=3
+flt.d     rd rs1 rs2      31..27=0x14 14..12=1 26..25=1 6..2=0x14 1..0=3
+feq.d     rd rs1 rs2      31..27=0x14 14..12=2 26..25=1 6..2=0x14 1..0=3
+
+fcvt.w.d  rd rs1 24..20=0 31..27=0x18 rm       26..25=1 6..2=0x14 1..0=3
+fcvt.wu.d rd rs1 24..20=1 31..27=0x18 rm       26..25=1 6..2=0x14 1..0=3
+fclass.d  rd rs1 24..20=0 31..27=0x1C 14..12=1 26..25=1 6..2=0x14 1..0=3
+
+fcvt.d.w  rd rs1 24..20=0 31..27=0x1A rm       26..25=1 6..2=0x14 1..0=3
+fcvt.d.wu rd rs1 24..20=1 31..27=0x1A rm       26..25=1 6..2=0x14 1..0=3
+
+fld       rd rs1 imm12 14..12=3 6..2=0x01 1..0=3
+
+fsd       imm12hi rs1 rs2 imm12lo 14..12=3 6..2=0x09 1..0=3
+
+fmadd.d   rd rs1 rs2 rs3 rm 26..25=1 6..2=0x10 1..0=3
+fmsub.d   rd rs1 rs2 rs3 rm 26..25=1 6..2=0x11 1..0=3
+fnmsub.d  rd rs1 rs2 rs3 rm 26..25=1 6..2=0x12 1..0=3
+fnmadd.d  rd rs1 rs2 rs3 rm 26..25=1 6..2=0x13 1..0=3
+# RV64D additions to RV32D
+
+fcvt.l.d  rd rs1 24..20=2 31..27=0x18 rm       26..25=1 6..2=0x14 1..0=3
+fcvt.lu.d rd rs1 24..20=3 31..27=0x18 rm       26..25=1 6..2=0x14 1..0=3
+fmv.x.d   rd rs1 24..20=0 31..27=0x1C 14..12=0 26..25=1 6..2=0x14 1..0=3
+
+fcvt.d.l  rd rs1 24..20=2 31..27=0x1A rm       26..25=1 6..2=0x14 1..0=3
+fcvt.d.lu rd rs1 24..20=3 31..27=0x1A rm       26..25=1 6..2=0x14 1..0=3
+fmv.d.x   rd rs1 24..20=0 31..27=0x1E 14..12=0 26..25=1 6..2=0x14 1..0=3
+fadd.q    rd rs1 rs2      31..27=0x00 rm       26..25=3 6..2=0x14 1..0=3
+fsub.q    rd rs1 rs2      31..27=0x01 rm       26..25=3 6..2=0x14 1..0=3
+fmul.q    rd rs1 rs2      31..27=0x02 rm       26..25=3 6..2=0x14 1..0=3
+fdiv.q    rd rs1 rs2      31..27=0x03 rm       26..25=3 6..2=0x14 1..0=3
+fsgnj.q   rd rs1 rs2      31..27=0x04 14..12=0 26..25=3 6..2=0x14 1..0=3
+fsgnjn.q  rd rs1 rs2      31..27=0x04 14..12=1 26..25=3 6..2=0x14 1..0=3
+fsgnjx.q  rd rs1 rs2      31..27=0x04 14..12=2 26..25=3 6..2=0x14 1..0=3
+fmin.q    rd rs1 rs2      31..27=0x05 14..12=0 26..25=3 6..2=0x14 1..0=3
+fmax.q    rd rs1 rs2      31..27=0x05 14..12=1 26..25=3 6..2=0x14 1..0=3
+fcvt.s.q  rd rs1 24..20=3 31..27=0x08 rm       26..25=0 6..2=0x14 1..0=3
+fcvt.q.s  rd rs1 24..20=0 31..27=0x08 rm       26..25=3 6..2=0x14 1..0=3
+fcvt.d.q  rd rs1 24..20=3 31..27=0x08 rm       26..25=1 6..2=0x14 1..0=3
+fcvt.q.d  rd rs1 24..20=1 31..27=0x08 rm       26..25=3 6..2=0x14 1..0=3
+fsqrt.q   rd rs1 24..20=0 31..27=0x0B rm       26..25=3 6..2=0x14 1..0=3
+
+
+
+fle.q     rd rs1 rs2      31..27=0x14 14..12=0 26..25=3 6..2=0x14 1..0=3
+flt.q     rd rs1 rs2      31..27=0x14 14..12=1 26..25=3 6..2=0x14 1..0=3
+feq.q     rd rs1 rs2      31..27=0x14 14..12=2 26..25=3 6..2=0x14 1..0=3
+
+
+fcvt.w.q  rd rs1 24..20=0 31..27=0x18 rm       26..25=3 6..2=0x14 1..0=3
+fcvt.wu.q rd rs1 24..20=1 31..27=0x18 rm       26..25=3 6..2=0x14 1..0=3
+fclass.q  rd rs1 24..20=0 31..27=0x1C 14..12=1 26..25=3 6..2=0x14 1..0=3
+
+
+fcvt.q.w  rd rs1 24..20=0 31..27=0x1A rm       26..25=3 6..2=0x14 1..0=3
+fcvt.q.wu rd rs1 24..20=1 31..27=0x1A rm       26..25=3 6..2=0x14 1..0=3
+
+flq       rd rs1 imm12 14..12=4 6..2=0x01 1..0=3
+
+fsq       imm12hi rs1 rs2 imm12lo 14..12=4 6..2=0x09 1..0=3
+
+fmadd.q   rd rs1 rs2 rs3 rm 26..25=3 6..2=0x10 1..0=3
+fmsub.q   rd rs1 rs2 rs3 rm 26..25=3 6..2=0x11 1..0=3
+fnmsub.q  rd rs1 rs2 rs3 rm 26..25=3 6..2=0x12 1..0=3
+fnmadd.q  rd rs1 rs2 rs3 rm 26..25=3 6..2=0x13 1..0=3
+# RV64Q additions to RV32Q
+
+fcvt.l.q  rd rs1 24..20=2 31..27=0x18 rm       26..25=3 6..2=0x14 1..0=3
+fcvt.lu.q rd rs1 24..20=3 31..27=0x18 rm       26..25=3 6..2=0x14 1..0=3
+
+fcvt.q.l  rd rs1 24..20=2 31..27=0x1A rm       26..25=3 6..2=0x14 1..0=3
+fcvt.q.lu rd rs1 24..20=3 31..27=0x1A rm       26..25=3 6..2=0x14 1..0=3
+andn       rd rs1 rs2 31..25=32 14..12=7 6..2=0x0C 1..0=3
+orn        rd rs1 rs2 31..25=32 14..12=6 6..2=0x0C 1..0=3
+xnor       rd rs1 rs2 31..25=32 14..12=4 6..2=0x0C 1..0=3
+
+slo        rd rs1 rs2 31..25=16 14..12=1 6..2=0x0C 1..0=3
+sro        rd rs1 rs2 31..25=16 14..12=5 6..2=0x0C 1..0=3
+rol        rd rs1 rs2 31..25=48 14..12=1 6..2=0x0C 1..0=3
+ror        rd rs1 rs2 31..25=48 14..12=5 6..2=0x0C 1..0=3
+
+sbclr      rd rs1 rs2 31..25=36 14..12=1 6..2=0x0C 1..0=3
+sbset      rd rs1 rs2 31..25=20 14..12=1 6..2=0x0C 1..0=3
+sbinv      rd rs1 rs2 31..25=52 14..12=1 6..2=0x0C 1..0=3
+sbext      rd rs1 rs2 31..25=36 14..12=5 6..2=0x0C 1..0=3
+gorc       rd rs1 rs2 31..25=20 14..12=5 6..2=0x0C 1..0=3
+grev       rd rs1 rs2 31..25=52 14..12=5 6..2=0x0C 1..0=3
+
+sloi       rd rs1 31..26=8  shamt 14..12=1 6..2=0x04 1..0=3
+sroi       rd rs1 31..26=8  shamt 14..12=5 6..2=0x04 1..0=3
+rori       rd rs1 31..26=24 shamt 14..12=5 6..2=0x04 1..0=3
+
+sbclri     rd rs1 31..26=18 shamt 14..12=1 6..2=0x04 1..0=3
+sbseti     rd rs1 31..26=10 shamt 14..12=1 6..2=0x04 1..0=3
+sbinvi     rd rs1 31..26=26 shamt 14..12=1 6..2=0x04 1..0=3
+sbexti     rd rs1 31..26=18 shamt 14..12=5 6..2=0x04 1..0=3
+gorci      rd rs1 31..26=10 shamt 14..12=5 6..2=0x04 1..0=3
+grevi      rd rs1 31..26=26 shamt 14..12=5 6..2=0x04 1..0=3
+
+cmix       rd rs1 rs2 rs3 26..25=3 14..12=1 6..2=0x0C 1..0=3
+cmov       rd rs1 rs2 rs3 26..25=3 14..12=5 6..2=0x0C 1..0=3
+
+fsl        rd rs1 rs2 rs3 26..25=2 14..12=1 6..2=0x0C 1..0=3
+fsr        rd rs1 rs2 rs3 26..25=2 14..12=5 6..2=0x0C 1..0=3
+fsri       rd rs1 shamt rs3   26=1 14..12=5 6..2=0x04 1..0=3
+
+clz        rd rs1 31..20=0x600 14..12=1 6..2=0x04 1..0=3
+ctz        rd rs1 31..20=0x601 14..12=1 6..2=0x04 1..0=3
+pcnt       rd rs1 31..20=0x602 14..12=1 6..2=0x04 1..0=3
+sext.b     rd rs1 31..20=0x604 14..12=1 6..2=0x04 1..0=3
+sext.h     rd rs1 31..20=0x605 14..12=1 6..2=0x04 1..0=3
+
+crc32.b    rd rs1 31..20=0x610 14..12=1 6..2=0x04 1..0=3
+crc32.h    rd rs1 31..20=0x611 14..12=1 6..2=0x04 1..0=3
+crc32.w    rd rs1 31..20=0x612 14..12=1 6..2=0x04 1..0=3
+crc32c.b   rd rs1 31..20=0x618 14..12=1 6..2=0x04 1..0=3
+crc32c.h   rd rs1 31..20=0x619 14..12=1 6..2=0x04 1..0=3
+crc32c.w   rd rs1 31..20=0x61A 14..12=1 6..2=0x04 1..0=3
+
+sh1add     rd rs1 rs2 31..25=16 14..12=2 6..2=0x0C 1..0=3
+sh2add     rd rs1 rs2 31..25=16 14..12=4 6..2=0x0C 1..0=3
+sh3add     rd rs1 rs2 31..25=16 14..12=6 6..2=0x0C 1..0=3
+
+clmul      rd rs1 rs2 31..25=5 14..12=1 6..2=0x0C 1..0=3
+clmulr     rd rs1 rs2 31..25=5 14..12=2 6..2=0x0C 1..0=3
+clmulh     rd rs1 rs2 31..25=5 14..12=3 6..2=0x0C 1..0=3
+min        rd rs1 rs2 31..25=5 14..12=4 6..2=0x0C 1..0=3
+minu       rd rs1 rs2 31..25=5 14..12=5 6..2=0x0C 1..0=3
+max        rd rs1 rs2 31..25=5 14..12=6 6..2=0x0C 1..0=3
+maxu       rd rs1 rs2 31..25=5 14..12=7 6..2=0x0C 1..0=3
+
+shfl       rd rs1 rs2 31..25=4  14..12=1 6..2=0x0C 1..0=3
+unshfl     rd rs1 rs2 31..25=4  14..12=5 6..2=0x0C 1..0=3
+bext       rd rs1 rs2 31..25=4  14..12=6 6..2=0x0C 1..0=3
+bdep       rd rs1 rs2 31..25=36 14..12=6 6..2=0x0C 1..0=3
+pack       rd rs1 rs2 31..25=4  14..12=4 6..2=0x0C 1..0=3
+packu      rd rs1 rs2 31..25=36 14..12=4 6..2=0x0C 1..0=3
+packh      rd rs1 rs2 31..25=4  14..12=7 6..2=0x0C 1..0=3
+bfp        rd rs1 rs2 31..25=36 14..12=7 6..2=0x0C 1..0=3
+
+shfli      rd rs1 31..25=4 shamtw 14..12=1 6..2=0x04 1..0=3
+unshfli    rd rs1 31..25=4 shamtw 14..12=5 6..2=0x04 1..0=3
+# RV64B additions to RV32B
+
+bmatflip   rd rs1 31..20=0x603 14..12=1 6..2=0x04 1..0=3
+crc32.d    rd rs1 31..20=0x613 14..12=1 6..2=0x04 1..0=3
+crc32c.d   rd rs1 31..20=0x61B 14..12=1 6..2=0x04 1..0=3
+
+bmator     rd rs1 rs2 31..25=4  14..12=3 6..2=0x0C 1..0=3
+bmatxor    rd rs1 rs2 31..25=36 14..12=3 6..2=0x0C 1..0=3
+
+addiwu     rd rs1 imm12          14..12=4 6..2=0x06 1..0=3
+slliu.w    rd rs1 31..26=2 shamt 14..12=1 6..2=0x06 1..0=3
+
+addwu      rd rs1 rs2 31..25=5  14..12=0 6..2=0x0E 1..0=3
+subwu      rd rs1 rs2 31..25=37 14..12=0 6..2=0x0E 1..0=3
+addu.w     rd rs1 rs2 31..25=4  14..12=0 6..2=0x0E 1..0=3
+
+slow       rd rs1 rs2 31..25=16 14..12=1 6..2=0x0E 1..0=3
+srow       rd rs1 rs2 31..25=16 14..12=5 6..2=0x0E 1..0=3
+rolw       rd rs1 rs2 31..25=48 14..12=1 6..2=0x0E 1..0=3
+rorw       rd rs1 rs2 31..25=48 14..12=5 6..2=0x0E 1..0=3
+
+sbclrw     rd rs1 rs2 31..25=36 14..12=1 6..2=0x0E 1..0=3
+sbsetw     rd rs1 rs2 31..25=20 14..12=1 6..2=0x0E 1..0=3
+sbinvw     rd rs1 rs2 31..25=52 14..12=1 6..2=0x0E 1..0=3
+sbextw     rd rs1 rs2 31..25=36 14..12=5 6..2=0x0E 1..0=3
+gorcw      rd rs1 rs2 31..25=20 14..12=5 6..2=0x0E 1..0=3
+grevw      rd rs1 rs2 31..25=52 14..12=5 6..2=0x0E 1..0=3
+
+sloiw      rd rs1 31..26=8  25=0 shamtw 14..12=1 6..2=0x06 1..0=3
+sroiw      rd rs1 31..26=8  25=0 shamtw 14..12=5 6..2=0x06 1..0=3
+roriw      rd rs1 31..26=24 25=0 shamtw 14..12=5 6..2=0x06 1..0=3
+
+sbclriw    rd rs1 31..26=18 25=0 shamtw 14..12=1 6..2=0x06 1..0=3
+sbsetiw    rd rs1 31..26=10 25=0 shamtw 14..12=1 6..2=0x06 1..0=3
+sbinviw    rd rs1 31..26=26 25=0 shamtw 14..12=1 6..2=0x06 1..0=3
+gorciw     rd rs1 31..26=10 25=0 shamtw 14..12=5 6..2=0x06 1..0=3
+greviw     rd rs1 31..26=26 25=0 shamtw 14..12=5 6..2=0x06 1..0=3
+
+fslw       rd rs1 rs2 rs3 26..25=2 14..12=1 6..2=0x0E 1..0=3
+fsrw       rd rs1 rs2 rs3 26..25=2 14..12=5 6..2=0x0E 1..0=3
+fsriw      rd rs1 shamtw rs3 26..25=2 14..12=5 6..2=0x06 1..0=3
+
+clzw       rd rs1 31..20=0x600 14..12=1 6..2=0x06 1..0=3
+ctzw       rd rs1 31..20=0x601 14..12=1 6..2=0x06 1..0=3
+pcntw      rd rs1 31..20=0x602 14..12=1 6..2=0x06 1..0=3
+
+sh1addu.w  rd rs1 rs2 31..25=16 14..12=2 6..2=0x0E 1..0=3
+sh2addu.w  rd rs1 rs2 31..25=16 14..12=4 6..2=0x0E 1..0=3
+sh3addu.w  rd rs1 rs2 31..25=16 14..12=6 6..2=0x0E 1..0=3
+
+clmulw     rd rs1 rs2 31..25=5 14..12=1 6..2=0x0E 1..0=3
+clmulrw    rd rs1 rs2 31..25=5 14..12=2 6..2=0x0E 1..0=3
+clmulhw    rd rs1 rs2 31..25=5 14..12=3 6..2=0x0E 1..0=3
+
+shflw      rd rs1 rs2 31..25=4  14..12=1 6..2=0x0E 1..0=3
+unshflw    rd rs1 rs2 31..25=4  14..12=5 6..2=0x0E 1..0=3
+bextw      rd rs1 rs2 31..25=4  14..12=6 6..2=0x0E 1..0=3
+bdepw      rd rs1 rs2 31..25=36 14..12=6 6..2=0x0E 1..0=3
+packw      rd rs1 rs2 31..25=4  14..12=4 6..2=0x0E 1..0=3
+packuw     rd rs1 rs2 31..25=36 14..12=4 6..2=0x0E 1..0=3
+bfpw       rd rs1 rs2 31..25=36 14..12=7 6..2=0x0E 1..0=3
+# SYSTEM
+ecall     11..7=0 19..15=0 31..20=0x000 14..12=0 6..2=0x1C 1..0=3
+ebreak    11..7=0 19..15=0 31..20=0x001 14..12=0 6..2=0x1C 1..0=3
+uret      11..7=0 19..15=0 31..20=0x002 14..12=0 6..2=0x1C 1..0=3
+sret      11..7=0 19..15=0 31..20=0x102 14..12=0 6..2=0x1C 1..0=3
+mret      11..7=0 19..15=0 31..20=0x302 14..12=0 6..2=0x1C 1..0=3
+dret      11..7=0 19..15=0 31..20=0x7b2 14..12=0 6..2=0x1C 1..0=3
+sfence.vma 11..7=0 rs1 rs2 31..25=0x09  14..12=0 6..2=0x1C 1..0=3
+wfi       11..7=0 19..15=0 31..20=0x105 14..12=0 6..2=0x1C 1..0=3
+csrrw     rd      rs1      imm12        14..12=1 6..2=0x1C 1..0=3
+csrrs     rd      rs1      imm12        14..12=2 6..2=0x1C 1..0=3
+csrrc     rd      rs1      imm12        14..12=3 6..2=0x1C 1..0=3
+csrrwi    rd      rs1      imm12        14..12=5 6..2=0x1C 1..0=3
+csrrsi    rd      rs1      imm12        14..12=6 6..2=0x1C 1..0=3
+csrrci    rd      rs1      imm12        14..12=7 6..2=0x1C 1..0=3
+# compressed instructions
+
+# these aren't really pseudo-ops, but they overlay other encodings,
+# so they are here to prevent parse_opcodes from barfing
+
+@c.nop      1..0=1 15..13=0 12=0      11..7=0      6..2=0
+@c.addi16sp 1..0=1 15..13=3 12=ignore 11..7=2      6..2=ignore
+@c.jr       1..0=2 15..13=4 12=0      11..7=ignore 6..2=0
+@c.jalr     1..0=2 15..13=4 12=1      11..7=ignore 6..2=0
+@c.ebreak   1..0=2 15..13=4 12=1      11..7=0      6..2=0
+
+# C0 encoding space
+#c.addi4spn 1..0=0 15..13=0 12=ignore 11..2=ignore
+#c.fld      1..0=0 15..13=1 12=ignore 11..2=ignore # c.lq for RV128
+#c.lw       1..0=0 15..13=2 12=ignore 11..2=ignore
+#c.flw      1..0=0 15..13=3 12=ignore 11..2=ignore # c.ld for RV64
+#c.fsd      1..0=0 15..13=5 12=ignore 11..2=ignore # c.sq for RV128
+#c.sw       1..0=0 15..13=6 12=ignore 11..2=ignore
+#c.fsw      1..0=0 15..13=7 12=ignore 11..2=ignore # c.sd for RV64
+
+# C1 encoding space
+#c.addi     1..0=1 15..13=0 12=ignore 11..2=ignore
+#c.jal      1..0=1 15..13=1 12=ignore 11..2=ignore # c.addiw for RV64
+#c.li       1..0=1 15..13=2 12=ignore 11..2=ignore
+#c.lui      1..0=1 15..13=3 12=ignore 11..2=ignore # c.addi16sp when rd=2
+#c.srli     1..0=1 15..13=4 12=ignore 11..10=0 9..2=ignore
+#c.srai     1..0=1 15..13=4 12=ignore 11..10=1 9..2=ignore
+#c.andi     1..0=1 15..13=4 12=ignore 11..10=2 9..2=ignore
+#c.sub      1..0=1 15..13=4 12=0      11..10=3 9..7=ignore 6..5=0 4..2=ignore
+#c.xor      1..0=1 15..13=4 12=0      11..10=3 9..7=ignore 6..5=1 4..2=ignore
+#c.or       1..0=1 15..13=4 12=0      11..10=3 9..7=ignore 6..5=2 4..2=ignore
+#c.and      1..0=1 15..13=4 12=0      11..10=3 9..7=ignore 6..5=3 4..2=ignore
+#c.j        1..0=1 15..13=5 12=ignore 11..2=ignore
+#c.beqz     1..0=1 15..13=6 12=ignore 11..2=ignore
+#c.bnez     1..0=1 15..13=7 12=ignore 11..2=ignore
+
+# C2 encoding space
+#c.slli     1..0=2 15..13=0 12=ignore 11..2=ignore
+#c.fldsp    1..0=2 15..13=1 12=ignore 11..2=ignore # c.lqsp for RV128
+#c.lwsp     1..0=2 15..13=2 12=ignore 11..2=ignore
+#c.flwsp    1..0=2 15..13=3 12=ignore 11..2=ignore # c.ldsp for RV64
+#c.mv       1..0=2 15..13=4 12=0      11..2=ignore # !rs2 = c.jr
+#c.add      1..0=2 15..13=4 12=1      11..2=ignore # !rs1 = c.ebreak; !rs2=c.jalr
+#c.fsdsp    1..0=2 15..13=5 12=ignore 11..2=ignore # c.sqsp for RV128
+#c.swsp     1..0=2 15..13=6 12=ignore 11..2=ignore
+#c.fswsp    1..0=2 15..13=7 12=ignore 11..2=ignore # c.sdsp for RV64
+# RV32C additions to RVC
+
+@c.srli.rv32  1..0=1 15..13=4 12=0 11..10=0 9..2=ignore
+@c.srai.rv32  1..0=1 15..13=4 12=0 11..10=1 9..2=ignore
+@c.slli.rv32  1..0=2 15..13=0 12=0 11..2=ignore
+# RV64C additions to RVC
+
+# C0 encoding space
+@c.ld      1..0=0 15..13=3 12=ignore 11..2=ignore # c.flw for RV32
+@c.sd      1..0=0 15..13=7 12=ignore 11..2=ignore # c.fsw for RV32
+
+# C1 encoding space
+c.subw     1..0=1 15..13=4 12=1      11..10=3 9..7=ignore 6..5=0 4..2=ignore
+c.addw     1..0=1 15..13=4 12=1      11..10=3 9..7=ignore 6..5=1 4..2=ignore
+@c.addiw   1..0=1 15..13=1 12=ignore 11..2=ignore # c.jal for RV32
+
+# C2 encoding space
+@c.ldsp    1..0=2 15..13=3 12=ignore 11..2=ignore # c.flwsp for RV32
+@c.sdsp    1..0=2 15..13=7 12=ignore 11..2=ignore # c.fswsp for RV32
+@custom0            rd rs1 imm12 14..12=0 6..2=0x02 1..0=3
+@custom0.rs1        rd rs1 imm12 14..12=2 6..2=0x02 1..0=3
+@custom0.rs1.rs2    rd rs1 imm12 14..12=3 6..2=0x02 1..0=3
+@custom0.rd         rd rs1 imm12 14..12=4 6..2=0x02 1..0=3
+@custom0.rd.rs1     rd rs1 imm12 14..12=6 6..2=0x02 1..0=3
+@custom0.rd.rs1.rs2 rd rs1 imm12 14..12=7 6..2=0x02 1..0=3
+
+@custom1            rd rs1 imm12 14..12=0 6..2=0x0A 1..0=3
+@custom1.rs1        rd rs1 imm12 14..12=2 6..2=0x0A 1..0=3
+@custom1.rs1.rs2    rd rs1 imm12 14..12=3 6..2=0x0A 1..0=3
+@custom1.rd         rd rs1 imm12 14..12=4 6..2=0x0A 1..0=3
+@custom1.rd.rs1     rd rs1 imm12 14..12=6 6..2=0x0A 1..0=3
+@custom1.rd.rs1.rs2 rd rs1 imm12 14..12=7 6..2=0x0A 1..0=3
+
+@custom2            rd rs1 imm12 14..12=0 6..2=0x16 1..0=3
+@custom2.rs1        rd rs1 imm12 14..12=2 6..2=0x16 1..0=3
+@custom2.rs1.rs2    rd rs1 imm12 14..12=3 6..2=0x16 1..0=3
+@custom2.rd         rd rs1 imm12 14..12=4 6..2=0x16 1..0=3
+@custom2.rd.rs1     rd rs1 imm12 14..12=6 6..2=0x16 1..0=3
+@custom2.rd.rs1.rs2 rd rs1 imm12 14..12=7 6..2=0x16 1..0=3
+
+@custom3            rd rs1 imm12 14..12=0 6..2=0x1E 1..0=3
+@custom3.rs1        rd rs1 imm12 14..12=2 6..2=0x1E 1..0=3
+@custom3.rs1.rs2    rd rs1 imm12 14..12=3 6..2=0x1E 1..0=3
+@custom3.rd         rd rs1 imm12 14..12=4 6..2=0x1E 1..0=3
+@custom3.rd.rs1     rd rs1 imm12 14..12=6 6..2=0x1E 1..0=3
+@custom3.rd.rs1.rs2 rd rs1 imm12 14..12=7 6..2=0x1E 1..0=3
+# format of a line in this file:
+# <instruction name> <args> <opcode>
+#
+# <opcode> is given by specifying one or more range/value pairs:
+# hi..lo=value or bit=value or arg=value (e.g. 6..2=0x45 10=1 rd=0)
+#
+# <args> is one of vd, vs3, vs1, vs2, vm, nf, wd, simm5, zimm11
+
+# configuration setting
+# https://github.com/riscv/riscv-v-spec/blob/master/vcfg-format.adoc
+vsetvli      31=0 zimm11         rs1 14..12=0x7 rd 6..0=0x57
+vsetvl       31=1 30..25=0x0 rs2 rs1 14..12=0x7 rd 6..0=0x57
+
+#
+# Vector Loads and Store
+# https://github.com/riscv/riscv-v-spec/blob/master/vmem-format.adoc
+#
+# Vector Unit-Stride Instructions (including segment part)
+# https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#74-vector-unit-stride-instructions
+vle8.v         nf 28=0 27..26=0 vm 24..20=0 rs1 14..12=0x0  vd 6..0=0x07
+vle16.v        nf 28=0 27..26=0 vm 24..20=0 rs1 14..12=0x5  vd 6..0=0x07
+vle32.v        nf 28=0 27..26=0 vm 24..20=0 rs1 14..12=0x6  vd 6..0=0x07
+vle64.v        nf 28=0 27..26=0 vm 24..20=0 rs1 14..12=0x7  vd 6..0=0x07
+vle128.v       nf 28=1 27..26=0 vm 24..20=0 rs1 14..12=0x0  vd 6..0=0x07
+vle256.v       nf 28=1 27..26=0 vm 24..20=0 rs1 14..12=0x5  vd 6..0=0x07
+vle512.v       nf 28=1 27..26=0 vm 24..20=0 rs1 14..12=0x6  vd 6..0=0x07
+vle1024.v      nf 28=1 27..26=0 vm 24..20=0 rs1 14..12=0x7  vd 6..0=0x07
+vse8.v         nf 28=0 27..26=0 vm 24..20=0 rs1 14..12=0x0 vs3 6..0=0x27
+vse16.v        nf 28=0 27..26=0 vm 24..20=0 rs1 14..12=0x5 vs3 6..0=0x27
+vse32.v        nf 28=0 27..26=0 vm 24..20=0 rs1 14..12=0x6 vs3 6..0=0x27
+vse64.v        nf 28=0 27..26=0 vm 24..20=0 rs1 14..12=0x7 vs3 6..0=0x27
+vse128.v       nf 28=1 27..26=0 vm 24..20=0 rs1 14..12=0x0 vs3 6..0=0x27
+vse256.v       nf 28=1 27..26=0 vm 24..20=0 rs1 14..12=0x5 vs3 6..0=0x27
+vse512.v       nf 28=1 27..26=0 vm 24..20=0 rs1 14..12=0x6 vs3 6..0=0x27
+vse1024.v      nf 28=1 27..26=0 vm 24..20=0 rs1 14..12=0x7 vs3 6..0=0x27
+
+# Vector Strided Instructions (including segment part)
+# https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#75-vector-strided-instructions
+vlse8.v         nf 28=0 27..26=2 vm rs2 rs1 14..12=0x0  vd 6..0=0x07
+vlse16.v        nf 28=0 27..26=2 vm rs2 rs1 14..12=0x5  vd 6..0=0x07
+vlse32.v        nf 28=0 27..26=2 vm rs2 rs1 14..12=0x6  vd 6..0=0x07
+vlse64.v        nf 28=0 27..26=2 vm rs2 rs1 14..12=0x7  vd 6..0=0x07
+vlse128.v       nf 28=1 27..26=2 vm rs2 rs1 14..12=0x0  vd 6..0=0x07
+vlse256.v       nf 28=1 27..26=2 vm rs2 rs1 14..12=0x5  vd 6..0=0x07
+vlse512.v       nf 28=1 27..26=2 vm rs2 rs1 14..12=0x6  vd 6..0=0x07
+vlse1024.v      nf 28=1 27..26=2 vm rs2 rs1 14..12=0x7  vd 6..0=0x07
+vsse8.v         nf 28=0 27..26=2 vm rs2 rs1 14..12=0x0 vs3 6..0=0x27
+vsse16.v        nf 28=0 27..26=2 vm rs2 rs1 14..12=0x5 vs3 6..0=0x27
+vsse32.v        nf 28=0 27..26=2 vm rs2 rs1 14..12=0x6 vs3 6..0=0x27
+vsse64.v        nf 28=0 27..26=2 vm rs2 rs1 14..12=0x7 vs3 6..0=0x27
+vsse128.v       nf 28=1 27..26=2 vm rs2 rs1 14..12=0x0 vs3 6..0=0x27
+vsse256.v       nf 28=1 27..26=2 vm rs2 rs1 14..12=0x5 vs3 6..0=0x27
+vsse512.v       nf 28=1 27..26=2 vm rs2 rs1 14..12=0x6 vs3 6..0=0x27
+vsse1024.v      nf 28=1 27..26=2 vm rs2 rs1 14..12=0x7 vs3 6..0=0x27
+
+# Vector Indexed Instructions (including segment part)
+# https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#76-vector-indexed-instructions
+vlxei8.v         nf 28=0 27..26=3 vm vs2 rs1 14..12=0x0  vd 6..0=0x07
+vlxei16.v        nf 28=0 27..26=3 vm vs2 rs1 14..12=0x5  vd 6..0=0x07
+vlxei32.v        nf 28=0 27..26=3 vm vs2 rs1 14..12=0x6  vd 6..0=0x07
+vlxei64.v        nf 28=0 27..26=3 vm vs2 rs1 14..12=0x7  vd 6..0=0x07
+vlxei128.v       nf 28=1 27..26=3 vm vs2 rs1 14..12=0x0  vd 6..0=0x07
+vlxei256.v       nf 28=1 27..26=3 vm vs2 rs1 14..12=0x5  vd 6..0=0x07
+vlxei512.v       nf 28=1 27..26=3 vm vs2 rs1 14..12=0x6  vd 6..0=0x07
+vlxei1024.v      nf 28=1 27..26=3 vm vs2 rs1 14..12=0x7  vd 6..0=0x07
+vsxei8.v         nf 28=0 27..26=3 vm vs2 rs1 14..12=0x0 vs3 6..0=0x27
+vsxei16.v        nf 28=0 27..26=3 vm vs2 rs1 14..12=0x5 vs3 6..0=0x27
+vsxei32.v        nf 28=0 27..26=3 vm vs2 rs1 14..12=0x6 vs3 6..0=0x27
+vsxei64.v        nf 28=0 27..26=3 vm vs2 rs1 14..12=0x7 vs3 6..0=0x27
+vsxei128.v       nf 28=1 27..26=3 vm vs2 rs1 14..12=0x0 vs3 6..0=0x27
+vsxei256.v       nf 28=1 27..26=3 vm vs2 rs1 14..12=0x5 vs3 6..0=0x27
+vsxei512.v       nf 28=1 27..26=3 vm vs2 rs1 14..12=0x6 vs3 6..0=0x27
+vsxei1024.v      nf 28=1 27..26=3 vm vs2 rs1 14..12=0x7 vs3 6..0=0x27
+
+vsuxei8.v        nf 28=0 27..26=1 vm vs2 rs1 14..12=0x0 vs3 6..0=0x27
+vsuxei16.v       nf 28=0 27..26=1 vm vs2 rs1 14..12=0x5 vs3 6..0=0x27
+vsuxei32.v       nf 28=0 27..26=1 vm vs2 rs1 14..12=0x6 vs3 6..0=0x27
+vsuxei64.v       nf 28=0 27..26=1 vm vs2 rs1 14..12=0x7 vs3 6..0=0x27
+vsuxei128.v      nf 28=1 27..26=1 vm vs2 rs1 14..12=0x0 vs3 6..0=0x27
+vsuxei256.v      nf 28=1 27..26=1 vm vs2 rs1 14..12=0x5 vs3 6..0=0x27
+vsuxei512.v      nf 28=1 27..26=1 vm vs2 rs1 14..12=0x6 vs3 6..0=0x27
+vsuxei1024.v     nf 28=1 27..26=1 vm vs2 rs1 14..12=0x7 vs3 6..0=0x27
+
+# Unit-stride F31..29=0ault-Only-First Loads
+# https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#77-unit-stride-fault-only-first-loads
+vle8ff.v         nf 28=0 27..26=0 vm 24..20=0x10 rs1 14..12=0x0  vd 6..0=0x07
+vle16ff.v        nf 28=0 27..26=0 vm 24..20=0x10 rs1 14..12=0x5  vd 6..0=0x07
+vle32ff.v        nf 28=0 27..26=0 vm 24..20=0x10 rs1 14..12=0x6  vd 6..0=0x07
+vle64ff.v        nf 28=0 27..26=0 vm 24..20=0x10 rs1 14..12=0x7  vd 6..0=0x07
+vle128ff.v       nf 28=1 27..26=0 vm 24..20=0x10 rs1 14..12=0x0  vd 6..0=0x07
+vle256ff.v       nf 28=1 27..26=0 vm 24..20=0x10 rs1 14..12=0x5  vd 6..0=0x07
+vle512ff.v       nf 28=1 27..26=0 vm 24..20=0x10 rs1 14..12=0x6  vd 6..0=0x07
+vle1024ff.v      nf 28=1 27..26=0 vm 24..20=0x10 rs1 14..12=0x7  vd 6..0=0x07
+
+# Vector Load/Store Whole Registers
+# https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#79-vector-loadstore-whole-register-instructions
+vl1re8.v       31..29=0 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x0 vd  6..0=0x07
+vl1re16.v      31..29=0 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x5 vd  6..0=0x07
+vl1re32.v      31..29=0 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x6 vd  6..0=0x07
+vl1re64.v      31..29=0 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x7 vd  6..0=0x07
+vl2re8.v       31..29=1 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x0 vd  6..0=0x07
+vl2re16.v      31..29=1 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x5 vd  6..0=0x07
+vl2re32.v      31..29=1 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x6 vd  6..0=0x07
+vl2re64.v      31..29=1 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x7 vd  6..0=0x07
+vl4re8.v       31..29=3 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x0 vd  6..0=0x07
+vl4re16.v      31..29=3 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x5 vd  6..0=0x07
+vl4re32.v      31..29=3 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x6 vd  6..0=0x07
+vl4re64.v      31..29=3 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x7 vd  6..0=0x07
+vl8re8.v       31..29=7 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x0 vd  6..0=0x07
+vl8re16.v      31..29=7 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x5 vd  6..0=0x07
+vl8re32.v      31..29=7 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x6 vd  6..0=0x07
+vl8re64.v      31..29=7 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x7 vd  6..0=0x07
+vs1r.v         31..29=0 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x0 vs3 6..0=0x27
+vs2r.v         31..29=1 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x0 vs3 6..0=0x27
+vs4r.v         31..29=3 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x0 vs3 6..0=0x27
+vs8r.v         31..29=7 28=0 27..26=0 25=1 24..20=0x08 rs1 14..12=0x0 vs3 6..0=0x27
+
+# Vector Floating-Point Instructions
+# https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#14-vector-floating-point-instructions
+# OPFVF
+vfadd.vf        31..26=0x00 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfsub.vf        31..26=0x02 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfmin.vf        31..26=0x04 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfmax.vf        31..26=0x06 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfsgnj.vf       31..26=0x08 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfsgnjn.vf      31..26=0x09 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfsgnjx.vf      31..26=0x0a vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfslide1up.vf   31..26=0x0e vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfslide1down.vf 31..26=0x0f vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfmv.s.f        31..26=0x10 25=1 24..20=0 rs1      14..12=0x5 vd 6..0=0x57
+
+vfmerge.vfm    31..26=0x17 25=0 vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfmv.v.f       31..26=0x17 25=1 24..20=0 rs1 14..12=0x5 vd 6..0=0x57
+vmfeq.vf       31..26=0x18 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vmfle.vf       31..26=0x19 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vmflt.vf       31..26=0x1b vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vmfne.vf       31..26=0x1c vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vmfgt.vf       31..26=0x1d vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vmfge.vf       31..26=0x1f vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+
+vfdiv.vf       31..26=0x20 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfrdiv.vf      31..26=0x21 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfmul.vf       31..26=0x24 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfrsub.vf      31..26=0x27 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfmadd.vf      31..26=0x28 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfnmadd.vf     31..26=0x29 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfmsub.vf      31..26=0x2a vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfnmsub.vf     31..26=0x2b vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfmacc.vf      31..26=0x2c vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfnmacc.vf     31..26=0x2d vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfmsac.vf      31..26=0x2e vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfnmsac.vf     31..26=0x2f vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+
+vfwadd.vf      31..26=0x30 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfwsub.vf      31..26=0x32 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfwadd.wf      31..26=0x34 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfwsub.wf      31..26=0x36 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfwmul.vf      31..26=0x38 vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfwmacc.vf     31..26=0x3c vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfwnmacc.vf    31..26=0x3d vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfwmsac.vf     31..26=0x3e vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+vfwnmsac.vf    31..26=0x3f vm vs2 rs1 14..12=0x5 vd 6..0=0x57
+
+# OPFVV
+vfadd.vv       31..26=0x00 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfredsum.vs    31..26=0x01 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfsub.vv       31..26=0x02 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfredosum.vs   31..26=0x03 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfmin.vv       31..26=0x04 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfredmin.vs    31..26=0x05 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfmax.vv       31..26=0x06 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfredmax.vs    31..26=0x07 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfsgnj.vv      31..26=0x08 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfsgnjn.vv     31..26=0x09 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfsgnjx.vv     31..26=0x0a vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfmv.f.s       31..26=0x10 25=1 vs2      19..15=0 14..12=0x1 rd 6..0=0x57
+
+vmfeq.vv       31..26=0x18 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vmfle.vv       31..26=0x19 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vmflt.vv       31..26=0x1b vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vmfne.vv       31..26=0x1c vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+
+vfdiv.vv       31..26=0x20 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfmul.vv       31..26=0x24 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfmadd.vv      31..26=0x28 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfnmadd.vv     31..26=0x29 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfmsub.vv      31..26=0x2a vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfnmsub.vv     31..26=0x2b vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfmacc.vv      31..26=0x2c vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfnmacc.vv     31..26=0x2d vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfmsac.vv      31..26=0x2e vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfnmsac.vv     31..26=0x2f vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+
+vfcvt.xu.f.v     31..26=0x12 vm vs2 19..15=0x00 14..12=0x1 vd 6..0=0x57
+vfcvt.x.f.v      31..26=0x12 vm vs2 19..15=0x01 14..12=0x1 vd 6..0=0x57
+vfcvt.f.xu.v     31..26=0x12 vm vs2 19..15=0x02 14..12=0x1 vd 6..0=0x57
+vfcvt.f.x.v      31..26=0x12 vm vs2 19..15=0x03 14..12=0x1 vd 6..0=0x57
+vfcvt.rtz.xu.f.v 31..26=0x12 vm vs2 19..15=0x06 14..12=0x1 vd 6..0=0x57
+vfcvt.rtz.x.f.v  31..26=0x12 vm vs2 19..15=0x07 14..12=0x1 vd 6..0=0x57
+
+vfwcvt.xu.f.v     31..26=0x12 vm vs2 19..15=0x08 14..12=0x1 vd 6..0=0x57
+vfwcvt.x.f.v      31..26=0x12 vm vs2 19..15=0x09 14..12=0x1 vd 6..0=0x57
+vfwcvt.f.xu.v     31..26=0x12 vm vs2 19..15=0x0A 14..12=0x1 vd 6..0=0x57
+vfwcvt.f.x.v      31..26=0x12 vm vs2 19..15=0x0B 14..12=0x1 vd 6..0=0x57
+vfwcvt.f.f.v      31..26=0x12 vm vs2 19..15=0x0C 14..12=0x1 vd 6..0=0x57
+vfwcvt.rtz.xu.f.v 31..26=0x12 vm vs2 19..15=0x0E 14..12=0x1 vd 6..0=0x57
+vfwcvt.rtz.x.f.v  31..26=0x12 vm vs2 19..15=0x0F 14..12=0x1 vd 6..0=0x57
+
+vfncvt.xu.f.w     31..26=0x12 vm vs2 19..15=0x10 14..12=0x1 vd 6..0=0x57
+vfncvt.x.f.w      31..26=0x12 vm vs2 19..15=0x11 14..12=0x1 vd 6..0=0x57
+vfncvt.f.xu.w     31..26=0x12 vm vs2 19..15=0x12 14..12=0x1 vd 6..0=0x57
+vfncvt.f.x.w      31..26=0x12 vm vs2 19..15=0x13 14..12=0x1 vd 6..0=0x57
+vfncvt.f.f.w      31..26=0x12 vm vs2 19..15=0x14 14..12=0x1 vd 6..0=0x57
+vfncvt.rod.f.f.w  31..26=0x12 vm vs2 19..15=0x15 14..12=0x1 vd 6..0=0x57
+vfncvt.rtz.xu.f.w 31..26=0x12 vm vs2 19..15=0x16 14..12=0x1 vd 6..0=0x57
+vfncvt.rtz.x.f.w  31..26=0x12 vm vs2 19..15=0x17 14..12=0x1 vd 6..0=0x57
+
+vfsqrt.v       31..26=0x13 vm vs2 19..15=0x00 14..12=0x1 vd 6..0=0x57
+vfrsqrte7.v    31..26=0x13 vm vs2 19..15=0x04 14..12=0x1 vd 6..0=0x57
+vfrece7.v      31..26=0x13 vm vs2 19..15=0x05 14..12=0x1 vd 6..0=0x57
+vfclass.v      31..26=0x13 vm vs2 19..15=0x10 14..12=0x1 vd 6..0=0x57
+
+vfwadd.vv      31..26=0x30 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfwredsum.vs   31..26=0x31 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfwsub.vv      31..26=0x32 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfwredosum.vs  31..26=0x33 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfwadd.wv      31..26=0x34 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfwsub.wv      31..26=0x36 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfwmul.vv      31..26=0x38 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfdot.vv       31..26=0x39 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfwmacc.vv     31..26=0x3c vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfwnmacc.vv    31..26=0x3d vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfwmsac.vv     31..26=0x3e vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+vfwnmsac.vv    31..26=0x3f vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+
+# OPIVX
+vadd.vx        31..26=0x00 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vsub.vx        31..26=0x02 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vrsub.vx       31..26=0x03 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vminu.vx       31..26=0x04 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmin.vx        31..26=0x05 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmaxu.vx       31..26=0x06 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmax.vx        31..26=0x07 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vand.vx        31..26=0x09 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vor.vx         31..26=0x0a vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vxor.vx        31..26=0x0b vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vrgather.vx    31..26=0x0c vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vslideup.vx    31..26=0x0e vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vslidedown.vx  31..26=0x0f vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+
+vadc.vxm       31..26=0x10 25=0 vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmadc.vxm      31..26=0x11 vm   vs2 rs1 14..12=0x4 vd 6..0=0x57
+vsbc.vxm       31..26=0x12 25=0 vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmsbc.vxm      31..26=0x13 vm   vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmerge.vxm     31..26=0x17 25=0 vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmv.v.x        31..26=0x17 25=1 24..20=0 rs1 14..12=0x4 vd 6..0=0x57
+vmseq.vx       31..26=0x18 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmsne.vx       31..26=0x19 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmsltu.vx      31..26=0x1a vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmslt.vx       31..26=0x1b vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmsleu.vx      31..26=0x1c vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmsle.vx       31..26=0x1d vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmsgtu.vx      31..26=0x1e vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vmsgt.vx       31..26=0x1f vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+
+vsaddu.vx      31..26=0x20 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vsadd.vx       31..26=0x21 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vssubu.vx      31..26=0x22 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vssub.vx       31..26=0x23 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vsll.vx        31..26=0x25 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vsmul.vx       31..26=0x27 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vsrl.vx        31..26=0x28 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vsra.vx        31..26=0x29 vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vssrl.vx       31..26=0x2a vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vssra.vx       31..26=0x2b vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vnsrl.wx       31..26=0x2c vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vnsra.wx       31..26=0x2d vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vnclipu.wx     31..26=0x2e vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vnclip.wx      31..26=0x2f vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+
+vqmaccu.vx     31..26=0x3c vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vqmacc.vx      31..26=0x3d vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vqmaccus.vx    31..26=0x3e vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+vqmaccsu.vx    31..26=0x3f vm vs2 rs1 14..12=0x4 vd 6..0=0x57
+
+# OPIVV
+vadd.vv         31..26=0x00 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vsub.vv         31..26=0x02 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vminu.vv        31..26=0x04 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vmin.vv         31..26=0x05 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vmaxu.vv        31..26=0x06 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vmax.vv         31..26=0x07 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vand.vv         31..26=0x09 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vor.vv          31..26=0x0a vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vxor.vv         31..26=0x0b vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vrgather.vv     31..26=0x0c vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vrgatherei16.vv 31..26=0x0e vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+
+vadc.vvm       31..26=0x10 25=0 vs2 vs1 14..12=0x0 vd 6..0=0x57
+vmadc.vvm      31..26=0x11 vm   vs2 vs1 14..12=0x0 vd 6..0=0x57
+vsbc.vvm       31..26=0x12 25=0 vs2 vs1 14..12=0x0 vd 6..0=0x57
+vmsbc.vvm      31..26=0x13 vm   vs2 vs1 14..12=0x0 vd 6..0=0x57
+vmerge.vvm     31..26=0x17 25=0 vs2 vs1 14..12=0x0 vd 6..0=0x57
+vmv.v.v        31..26=0x17 25=1 24..20=0 vs1 14..12=0x0 vd 6..0=0x57
+vmseq.vv       31..26=0x18 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vmsne.vv       31..26=0x19 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vmsltu.vv      31..26=0x1a vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vmslt.vv       31..26=0x1b vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vmsleu.vv      31..26=0x1c vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vmsle.vv       31..26=0x1d vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+
+vsaddu.vv      31..26=0x20 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vsadd.vv       31..26=0x21 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vssubu.vv      31..26=0x22 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vssub.vv       31..26=0x23 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vsll.vv        31..26=0x25 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vsmul.vv       31..26=0x27 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vsrl.vv        31..26=0x28 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vsra.vv        31..26=0x29 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vssrl.vv       31..26=0x2a vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vssra.vv       31..26=0x2b vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vnsrl.wv       31..26=0x2c vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vnsra.wv       31..26=0x2d vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vnclipu.wv     31..26=0x2e vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vnclip.wv      31..26=0x2f vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+
+vwredsumu.vs   31..26=0x30 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vwredsum.vs    31..26=0x31 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vdotu.vv       31..26=0x38 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vdot.vv        31..26=0x39 vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+
+vqmaccu.vv     31..26=0x3c vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vqmacc.vv      31..26=0x3d vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+vqmaccsu.vv    31..26=0x3f vm vs2 vs1 14..12=0x0 vd 6..0=0x57
+
+# OPIVI
+vadd.vi        31..26=0x00 vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vrsub.vi       31..26=0x03 vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vand.vi        31..26=0x09 vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vor.vi         31..26=0x0a vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vxor.vi        31..26=0x0b vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vrgather.vi    31..26=0x0c vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vslideup.vi    31..26=0x0e vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vslidedown.vi  31..26=0x0f vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+
+vadc.vim       31..26=0x10 25=0 vs2 simm5 14..12=0x3 vd 6..0=0x57
+vmadc.vim      31..26=0x11 vm   vs2 simm5 14..12=0x3 vd 6..0=0x57
+vmerge.vim     31..26=0x17 25=0 vs2 simm5 14..12=0x3 vd 6..0=0x57
+vmv.v.i        31..26=0x17 25=1 24..20=0 simm5 14..12=0x3 vd 6..0=0x57
+vmseq.vi       31..26=0x18 vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vmsne.vi       31..26=0x19 vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vmsleu.vi      31..26=0x1c vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vmsle.vi       31..26=0x1d vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vmsgtu.vi      31..26=0x1e vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vmsgt.vi       31..26=0x1f vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+
+vsaddu.vi      31..26=0x20 vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vsadd.vi       31..26=0x21 vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vsll.vi        31..26=0x25 vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vmv1r.v        31..26=0x27 25=1 vs2 19..15=0 14..12=0x3 vd 6..0=0x57
+vmv2r.v        31..26=0x27 25=1 vs2 19..15=1 14..12=0x3 vd 6..0=0x57
+vmv4r.v        31..26=0x27 25=1 vs2 19..15=3 14..12=0x3 vd 6..0=0x57
+vmv8r.v        31..26=0x27 25=1 vs2 19..15=7 14..12=0x3 vd 6..0=0x57
+vsrl.vi        31..26=0x28 vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vsra.vi        31..26=0x29 vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vssrl.vi       31..26=0x2a vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vssra.vi       31..26=0x2b vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vnsrl.wi       31..26=0x2c vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vnsra.wi       31..26=0x2d vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vnclipu.wi     31..26=0x2e vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+vnclip.wi      31..26=0x2f vm vs2 simm5 14..12=0x3 vd 6..0=0x57
+
+# OPMVV
+vredsum.vs     31..26=0x00 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vredand.vs     31..26=0x01 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vredor.vs      31..26=0x02 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vredxor.vs     31..26=0x03 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vredminu.vs    31..26=0x04 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vredmin.vs     31..26=0x05 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vredmaxu.vs    31..26=0x06 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vredmax.vs     31..26=0x07 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vaaddu.vv      31..26=0x08 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vaadd.vv       31..26=0x09 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vasubu.vv      31..26=0x0a vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vasub.vv       31..26=0x0b vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+
+vmv.x.s        31..26=0x10 25=1 vs2 19..15=0 14..12=0x2 vd 6..0=0x57
+
+# Vector Integer Extension Instructions
+# https://github.com/riscv/riscv-v-spec/blob/e49574c92b072fd4d71e6cb20f7e8154de5b83fe/v-spec.adoc#123-vector-integer-extension
+vzext.vf8      31..26=0x12 vm vs2 19..15=2 14..12=0x2 vd 6..0=0x57
+vsext.vf8      31..26=0x12 vm vs2 19..15=3 14..12=0x2 vd 6..0=0x57
+vzext.vf4      31..26=0x12 vm vs2 19..15=4 14..12=0x2 vd 6..0=0x57
+vsext.vf4      31..26=0x12 vm vs2 19..15=5 14..12=0x2 vd 6..0=0x57
+vzext.vf2      31..26=0x12 vm vs2 19..15=6 14..12=0x2 vd 6..0=0x57
+vsext.vf2      31..26=0x12 vm vs2 19..15=7 14..12=0x2 vd 6..0=0x57
+
+vcompress.vm   31..26=0x17 25=1 vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmandnot.mm    31..26=0x18 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmand.mm       31..26=0x19 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmor.mm        31..26=0x1a vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmxor.mm       31..26=0x1b vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmornot.mm     31..26=0x1c vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmnand.mm      31..26=0x1d vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmnor.mm       31..26=0x1e vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmxnor.mm      31..26=0x1f vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+
+vmsbf.m        31..26=0x14 vm vs2 19..15=0x01 14..12=0x2 vd 6..0=0x57
+vmsof.m        31..26=0x14 vm vs2 19..15=0x02 14..12=0x2 vd 6..0=0x57
+vmsif.m        31..26=0x14 vm vs2 19..15=0x03 14..12=0x2 vd 6..0=0x57
+viota.m        31..26=0x14 vm vs2 19..15=0x10 14..12=0x2 vd 6..0=0x57
+vid.v          31..26=0x14 vm 24..20=0 19..15=0x11 14..12=0x2 vd 6..0=0x57
+vpopc.m        31..26=0x10 vm vs2 19..15=0x10 14..12=0x2 rd 6..0=0x57
+vfirst.m       31..26=0x10 vm vs2 19..15=0x11 14..12=0x2 rd 6..0=0x57
+
+vdivu.vv       31..26=0x20 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vdiv.vv        31..26=0x21 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vremu.vv       31..26=0x22 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vrem.vv        31..26=0x23 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmulhu.vv      31..26=0x24 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmul.vv        31..26=0x25 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmulhsu.vv     31..26=0x26 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmulh.vv       31..26=0x27 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmadd.vv       31..26=0x29 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vnmsub.vv      31..26=0x2b vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vmacc.vv       31..26=0x2d vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vnmsac.vv      31..26=0x2f vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+
+vwaddu.vv      31..26=0x30 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwadd.vv       31..26=0x31 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwsubu.vv      31..26=0x32 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwsub.vv       31..26=0x33 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwaddu.wv      31..26=0x34 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwadd.wv       31..26=0x35 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwsubu.wv      31..26=0x36 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwsub.wv       31..26=0x37 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwmulu.vv      31..26=0x38 vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwmulsu.vv     31..26=0x3a vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwmul.vv       31..26=0x3b vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwmaccu.vv     31..26=0x3c vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwmacc.vv      31..26=0x3d vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+vwmaccsu.vv    31..26=0x3f vm vs2 vs1 14..12=0x2 vd 6..0=0x57
+
+# OPMVX
+vaaddu.vx      31..26=0x08 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vaadd.vx       31..26=0x09 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vasubu.vx      31..26=0x0a vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vasub.vx       31..26=0x0b vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+
+vmv.s.x        31..26=0x10 25=1 24..20=0 rs1 14..12=0x6 vd 6..0=0x57
+vslide1up.vx   31..26=0x0e vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vslide1down.vx 31..26=0x0f vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+
+vdivu.vx       31..26=0x20 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vdiv.vx        31..26=0x21 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vremu.vx       31..26=0x22 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vrem.vx        31..26=0x23 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vmulhu.vx      31..26=0x24 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vmul.vx        31..26=0x25 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vmulhsu.vx     31..26=0x26 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vmulh.vx       31..26=0x27 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vmadd.vx       31..26=0x29 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vnmsub.vx      31..26=0x2b vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vmacc.vx       31..26=0x2d vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vnmsac.vx      31..26=0x2f vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+
+vwaddu.vx      31..26=0x30 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwadd.vx       31..26=0x31 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwsubu.vx      31..26=0x32 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwsub.vx       31..26=0x33 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwaddu.wx      31..26=0x34 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwadd.wx       31..26=0x35 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwsubu.wx      31..26=0x36 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwsub.wx       31..26=0x37 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwmulu.vx      31..26=0x38 vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwmulsu.vx     31..26=0x3a vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwmul.vx       31..26=0x3b vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwmaccu.vx     31..26=0x3c vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwmacc.vx      31..26=0x3d vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwmaccus.vx    31..26=0x3e vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+vwmaccsu.vx    31..26=0x3f vm vs2 rs1 14..12=0x6 vd 6..0=0x57
+
+# Zvamo
+vamoswapei8.v  31..27=0x01 wd vm vs2 rs1 14..12=0x0 vd 6..0=0x2f
+vamoaddei8.v   31..27=0x00 wd vm vs2 rs1 14..12=0x0 vd 6..0=0x2f
+vamoxorei8.v   31..27=0x04 wd vm vs2 rs1 14..12=0x0 vd 6..0=0x2f
+vamoandei8.v   31..27=0x0c wd vm vs2 rs1 14..12=0x0 vd 6..0=0x2f
+vamoorei8.v    31..27=0x08 wd vm vs2 rs1 14..12=0x0 vd 6..0=0x2f
+vamominei8.v   31..27=0x10 wd vm vs2 rs1 14..12=0x0 vd 6..0=0x2f
+vamomaxei8.v   31..27=0x14 wd vm vs2 rs1 14..12=0x0 vd 6..0=0x2f
+vamominuei8.v  31..27=0x18 wd vm vs2 rs1 14..12=0x0 vd 6..0=0x2f
+vamomaxuei8.v  31..27=0x1c wd vm vs2 rs1 14..12=0x0 vd 6..0=0x2f
+
+vamoswapei16.v 31..27=0x01 wd vm vs2 rs1 14..12=0x5 vd 6..0=0x2f
+vamoaddei16.v  31..27=0x00 wd vm vs2 rs1 14..12=0x5 vd 6..0=0x2f
+vamoxorei16.v  31..27=0x04 wd vm vs2 rs1 14..12=0x5 vd 6..0=0x2f
+vamoandei16.v  31..27=0x0c wd vm vs2 rs1 14..12=0x5 vd 6..0=0x2f
+vamoorei16.v   31..27=0x08 wd vm vs2 rs1 14..12=0x5 vd 6..0=0x2f
+vamominei16.v  31..27=0x10 wd vm vs2 rs1 14..12=0x5 vd 6..0=0x2f
+vamomaxei16.v  31..27=0x14 wd vm vs2 rs1 14..12=0x5 vd 6..0=0x2f
+vamominuei16.v 31..27=0x18 wd vm vs2 rs1 14..12=0x5 vd 6..0=0x2f
+vamomaxuei16.v 31..27=0x1c wd vm vs2 rs1 14..12=0x5 vd 6..0=0x2f
+
+vamoswapei32.v 31..27=0x01 wd vm vs2 rs1 14..12=0x6 vd 6..0=0x2f
+vamoaddei32.v  31..27=0x00 wd vm vs2 rs1 14..12=0x6 vd 6..0=0x2f
+vamoxorei32.v  31..27=0x04 wd vm vs2 rs1 14..12=0x6 vd 6..0=0x2f
+vamoandei32.v  31..27=0x0c wd vm vs2 rs1 14..12=0x6 vd 6..0=0x2f
+vamoorei32.v   31..27=0x08 wd vm vs2 rs1 14..12=0x6 vd 6..0=0x2f
+vamominei32.v  31..27=0x10 wd vm vs2 rs1 14..12=0x6 vd 6..0=0x2f
+vamomaxei32.v  31..27=0x14 wd vm vs2 rs1 14..12=0x6 vd 6..0=0x2f
+vamominuei32.v 31..27=0x18 wd vm vs2 rs1 14..12=0x6 vd 6..0=0x2f
+vamomaxuei32.v 31..27=0x1c wd vm vs2 rs1 14..12=0x6 vd 6..0=0x2f
+
+vamoswapei64.v 31..27=0x01 wd vm vs2 rs1 14..12=0x7 vd 6..0=0x2f
+vamoaddei64.v  31..27=0x00 wd vm vs2 rs1 14..12=0x7 vd 6..0=0x2f
+vamoxorei64.v  31..27=0x04 wd vm vs2 rs1 14..12=0x7 vd 6..0=0x2f
+vamoandei64.v  31..27=0x0c wd vm vs2 rs1 14..12=0x7 vd 6..0=0x2f
+vamoorei64.v   31..27=0x08 wd vm vs2 rs1 14..12=0x7 vd 6..0=0x2f
+vamominei64.v  31..27=0x10 wd vm vs2 rs1 14..12=0x7 vd 6..0=0x2f
+vamomaxei64.v  31..27=0x14 wd vm vs2 rs1 14..12=0x7 vd 6..0=0x2f
+vamominuei64.v 31..27=0x18 wd vm vs2 rs1 14..12=0x7 vd 6..0=0x2f
+vamomaxuei64.v 31..27=0x1c wd vm vs2 rs1 14..12=0x7 vd 6..0=0x2f
+# vmv1r.v, vmv2r.v, vmv4r.v, vmv8r.v
+@vmvnfr.v     31..26=0x27 25=1 vs2 simm5 14..12=0x3 vd 6..0=0x57
+
+@vl1r.v       31..26=0 25=1 24..20=0x08 rs1 14..12=0x0 vd   6..0=0x07
+@vl2r.v       31..26=1 25=1 24..20=0x08 rs1 14..12=0x5 vd   6..0=0x07
+@vl4r.v       31..26=3 25=1 24..20=0x08 rs1 14..12=0x6 vd   6..0=0x07
+@vl8r.v       31..26=7 25=1 24..20=0x08 rs1 14..12=0x7 vd   6..0=0x07
+##OPCODES-END
