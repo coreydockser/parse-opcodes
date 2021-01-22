@@ -1,5 +1,0 @@
-xlsxwriter
-openpyxl
-re
-os
-math

@@ -1,3 +1,0 @@
-[console_scripts]
-parse_opcodes = parse.__main__:main
-
